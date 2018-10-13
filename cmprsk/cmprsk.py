@@ -12,9 +12,8 @@ class CrrResult(object):
         self.raw = r_crr_res
         # TODO: finish parsing
 
-    def sumarry(self):
+    def summary(self):
         print(self.raw)
-
 
 
 def crr(ftime, fstatus, covariates_1):
