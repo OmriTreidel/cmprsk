@@ -1,0 +1,5 @@
+# ignore git
+.git/
+build/
+dist/
+*.egg*
