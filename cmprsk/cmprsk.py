@@ -4,7 +4,11 @@ from . import rpy_utils
 from . import utils
 
 
-cmprsk = import_R('cmprsk')
+r_cmprsk = import_R('cmprsk')
+
+
+class NonNumericCovariateError(Exception):
+    pass
 
 
 class CrrResult(object):
@@ -30,10 +34,10 @@ def crr(ftime, fstatus, covariates_1):
 
         Input dataframe contains non numeric columns: {}.
         Please convert text columns using `rpy_utils.to_categorical` method first""".format(non_numeric_cols)
-        raise InputError(msg)
+        raise NonNumericCovariateError(msg)
 
     r_cov_1 = rpy_utils.r_dataframe(covariates_1)
-    r_ftime = r_vector(ftime)
-    r_fstatus = r_vector(fstatus)
-    r_crr_result = cmprsk.crr(r_ftime, r_fstatus, r_cov_1)
+    r_ftime = rpy_utils.r_vector(ftime)
+    r_fstatus = rpy_utils.r_vector(fstatus)
+    r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_cov_1)
     return CrrResult(r_crr_result)

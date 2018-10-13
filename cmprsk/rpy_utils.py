@@ -5,11 +5,11 @@ import pandas as pd
 import rpy2 as R
 
 from pandas.api.types import is_numeric_dtype
-from rpy2 import rinterface
+# from rpy2 import rinterface
 from rpy2 import robjects
+from rpy2.robjects import r, pandas2ri, numpy2ri
 from rpy2.robjects.packages import importr
 
-from rpy2.robjects import r, pandas2ri, numpy2ri
 pandas2ri.activate()
 numpy2ri.activate()
 
@@ -24,24 +24,13 @@ class InputError(Exception):
 
 class Dtypes(enum.Enum):
     int = R.rinterface.INTSXP
-    real = R.rinterface.REALSXP
+    float = R.rinterface.REALSXP
     bool = R.rinterface.LGLSXP
+    str = R.rinterface.STRSXP
 
 
-def r_int_vec(np_vec, dtype):
+def r_vec(np_vec, dtype):
     return R.rinterface.SexpVector(np_vec, dtype.value)
-
-
-def r_int_vec(np_vec):
-    return R.rinterface.SexpVector(np_vec, R.rinterface.INTSXP)
-
-
-def r_float_vec(np_vec):
-    return R.rinterface.SexpVector(np_vec, R.rinterface.REALSXP)
-
-
-def r_bool_vec(np_vec):
-    return R.rinterface.SexpVector(np_vec, R.rinterface.LGLSXP)
 
 
 def r_vector(np_vector):
@@ -60,58 +49,35 @@ def r_vector(np_vector):
 
     d_type = np_vector.dtype
     if np.issubdtype(d_type, np.integer):
-        return r_int_vec(np_vector)
+        return r_vec(np_vector, Dtypes.int)
     elif np.issubdtype(d_type, np.float):
-        return r_float_vec(np_vector)
+        return r_vec(np_vector, Dtypes.float)
     elif np.issubdtype(d_type, np.bool):
-        return r_bool_vec(np_vector)
+        return r_vec(np_vector,Dtypes.bool)
+    elif np.issubdtype(d_type, np.str):
+        return r_vec(np_vector,Dtypes.string)
     else:
         msg = "Can't convert vectors with dtype %s yet" % d_type
         raise NotImplementedError(msg)
 
 
 def r_matrix(np_matrix, col_names=None):
+    """Convert a numpymatrix to R matrix. If no columns are provided
+    it will assign the following ['x_1', 'x_2',... ] as column names
+    """
 
     if np_matrix.ndim != 2:
         msg = 'Input input dimension is %s and MUST be 2' % np_matrix.ndim
         raise ValueError(msg)
 
     n_row, n_col = np_matrix.shape
-    r_mat = robject.r.matrix(cov, nrow=n_row, ncol=n_col)
+    r_mat = robjects.r.matrix(np_matrix, nrow=n_row, ncol=n_col)
     if col_names is None:
         col_names = ['x_%s' %(i+1) for i in range(n_col)]
 
-    r_mat.colnames = col_names
+    r_mat.colnames = robjects.StrVector(col_names)
     return r_mat
 
 
 def r_dataframe(pd_dataframe):
-    return pandas2ri.py2ri(df)
-
-
-
-#
-# import string
-# import random
-#
-# np.random.seed(42)
-# ftime = np.random.exponential(size=200)
-# fstatus = np.random.randint(0, 3, 200)
-# x1 = np.random.exponential(size=200)
-# x2 = np.random.randn(200)
-# x0 = [random.choice(string.ascii_lowercase) for _ in range(200)]
-#
-# cov = pd.DataFrame(dict(x0=x0, x1=x1, x2=x2))
-#
-# try:
-#     cov_2 = to_categorical(cov, ['x0'])
-#     res = R_crr(ftime, fstatus, cov_2)
-#     print(res.raw)
-# except Exception as exc:
-#     print(exc)
-#
-# try:
-#     res = R_crr(ftime, fstatus, cov)
-# except InputError as exc:
-#     print("caught the right exception")
-#     print(exc)
+    return pandas2ri.py2ri(pd_dataframe)
