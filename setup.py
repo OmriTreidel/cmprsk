@@ -22,6 +22,7 @@ setuptools.setup(
           'numpy',
           'pandas',
           'rpy2',
+          'scipy',
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],

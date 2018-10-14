@@ -25,6 +25,7 @@ class CrrResult(object):
         self._coefficients = self.parsed['coef']
         self._covariance = self.parsed['var']
         self._stderr = np.sqrt(np.diag(self._covariance))
+        self._z = self._covariance/self._stderr
 
     def asdict(self):
         return rpy_utils.parse_r_list(self.raw)
@@ -47,9 +48,15 @@ class CrrResult(object):
                     zip(self.coefficients, self.stderr)]
         return np.array(_p_vals)
 
-    @property
-    def hazard_ratio(self):
-        return np.exp(self._coefficients)
+    def hazard_ratio(self, conf_level=0.95):
+        values = np.zeros(len(self.coefficients))
+        confidence = np.zeros((len(self.coefficients), 2))
+        edges = np.array(normal.interval(conf_level))
+        for i, (coef, std) in enumerate(zip(self.coefficients, self.stderr)):
+            values[i] = np.exp(coef)
+            confidence[i, :] = [np.exp(coef + edges[0] * std),
+                                np.exp(coef + edges[1] * std)]
+        return values, confidence
 
     def summary(self):
         print(self.raw)
@@ -59,15 +66,16 @@ def p_value(x, stderr):
     return 2 * (1 - normal.cdf(abs(x/stderr)))
 
 
-def crr(ftime, fstatus, covariates_1):
+def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
+        subset=None, **kwargs):
     """
     Args:
         ftime (np.array): time to failure
         fstatus (np.array):
-        covariates_1 (pd.DataFrame): numeric only dataframe
-        # covariates_2 (pd.DataFrame): numeric only dataframe
+        static_covariates (pd.DataFrame): time independent  covariates. numeric only dataframe
+
     """
-    non_numeric_cols = utils.non_numeric_columns(covariates_1)
+    non_numeric_cols = utils.non_numeric_columns(static_covariates)
     if non_numeric_cols:
         msg = """
 
@@ -75,9 +83,18 @@ def crr(ftime, fstatus, covariates_1):
         Please convert text columns using `rpy_utils.to_categorical` method first""".format(non_numeric_cols)
         raise NonNumericCovariateError(msg)
 
-    r_cov_1 = rpy_utils.r_dataframe(covariates_1)
     r_ftime = rpy_utils.r_vector(ftime)
     r_fstatus = rpy_utils.r_vector(fstatus)
-    r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_cov_1)
-    # return r_crr_result
+    r_static_cov = rpy_utils.r_dataframe(static_covariates)
+
+    if cengroup is not None:
+        r_cengroup = rpy_utils.r_vector(cengroup)
+        kwargs['cengroup'] = r_cengroup
+
+    if subset is not None:
+        r_subset = rpy_utils.r_vector(subset)
+        kwargs['subset'] = r_subset
+
+    r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_static_cov,
+                                failcode=failcode, cencode=cencode, **kwargs)
     return CrrResult(r_crr_result)
