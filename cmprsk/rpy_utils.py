@@ -81,3 +81,7 @@ def r_matrix(np_matrix, col_names=None):
 
 def r_dataframe(pd_dataframe):
     return pandas2ri.py2ri(pd_dataframe)
+
+
+def parse_r_list(r_list):
+    return dict(zip(r_list.names, map(np.array, r_list)))
