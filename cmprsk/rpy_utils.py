@@ -50,7 +50,7 @@ def r_vector(np_vector):
     d_type = np_vector.dtype
     if np.issubdtype(d_type, np.integer):
         return r_vec(np_vector, Dtypes.int)
-    elif np.issubdtype(d_type, np.float):
+    elif np.issubdtype(d_type, np.floating):
         return r_vec(np_vector, Dtypes.float)
     elif np.issubdtype(d_type, np.bool):
         return r_vec(np_vector,Dtypes.bool)

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from rpy2.robjects.packages import importr as import_R
 from scipy.stats import norm as normal
@@ -70,8 +71,8 @@ def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
         subset=None, **kwargs):
     """
     Args:
-        ftime (np.array): time to failure
-        fstatus (np.array):
+        ftime (np.array or pandas.Series): time to failure
+        fstatus (np.array or pandas.Series):
         static_covariates (pd.DataFrame): time independent  covariates. numeric only dataframe
 
     """
@@ -83,8 +84,14 @@ def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
         Please convert text columns using `rpy_utils.to_categorical` method first""".format(non_numeric_cols)
         raise NonNumericCovariateError(msg)
 
+    if isinstance(ftime, pd.Series):
+        ftime = ftime.values
     r_ftime = rpy_utils.r_vector(ftime)
+
+    if isinstance(fstatus, pd.Series):
+        fstatus = fstatus.values
     r_fstatus = rpy_utils.r_vector(fstatus)
+
     r_static_cov = rpy_utils.r_dataframe(static_covariates)
 
     if cengroup is not None:
