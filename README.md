@@ -21,6 +21,31 @@ TL;DR
 * R > 3.2 [install R](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu)
 * readline 7.0 [install on MacOS](http://blogs.perl.org/users/aristotle/2013/07/easy-osx-termreadlinegnu.html) see also the following [issue](https://github.com/conda-forge/rpy2-feedstock/issues/1)
 
+## Quickstart
+
+```python
+
+import pandas as pd
+
+import cmprsk.cmprsk as cmprsk
+
+from cmprsk import utils
+
+data = pd.read_csv('my_data_fle')
+# assuming that x1,x2,x3, x4 are covatiates. 
+# x1 are x4 are categorical with baseline 'd' for x1 and 5 for x2 
+static_covariates = utils.as_indicators(data[['x1', 'x2', 'x3', 'x4']], ['x1', 'x4'], bases=['d', 5])
+
+crr_result = cmprsk.crr(ftime, fstatus, static_covariates)
+report = crr_result.summary
+
+print(report)
+
+```
+`ftime` and `fstatus` can be numpy array or pandas series, and `static_covariates` is a pandas DataFrame.
+The `report` is a pandas `DataFrame` as well. 
+
+
 ### How to update package:
 0. update version in setup.py
 1. rm -fr dist directory
