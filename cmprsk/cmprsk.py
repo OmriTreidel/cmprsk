@@ -24,12 +24,17 @@ class CrrResult(object):
         self.raw = r_crr_res
         self.parsed = self.asdict()
         self._coefficients = self.parsed['coef']
+        self._names = list(self.raw[0].names)
         self._covariance = self.parsed['var']
         self._stderr = np.sqrt(np.diag(self._covariance))
         self._z = self._covariance/self._stderr
 
     def asdict(self):
         return rpy_utils.parse_r_list(self.raw)
+
+    @property
+    def names(self):
+        return self._names
 
     @property
     def coefficients(self):
@@ -59,9 +64,19 @@ class CrrResult(object):
                                 np.exp(coef + edges[1] * std)]
         return values, confidence
 
+    @property
     def summary(self):
-        print(self.raw)
-
+        cols = ['names', 'coefficients', 'stderr', 'hazard_ratio',
+                'hazard_ratio_2.5%', 'hazard_ratio_97.5%', 'p_values']
+        out = pd.DataFrame(columns=cols)
+        out['coefficients'] = self.coefficients
+        out['stderr'] = self.stderr
+        hazard_ratio, confidence = self.hazard_ratio()
+        out['hazard_ratio'] = hazard_ratio
+        out[['hazard_ratio_2.5%', 'hazard_ratio_97.5%']] = confidence
+        out['p_values'] = self.p_values
+        out['names'] = self.names
+        return out.set_index('names')
 
 def p_value(x, stderr):
     return 2 * (1 - normal.cdf(abs(x/stderr)))

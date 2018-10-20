@@ -31,17 +31,5 @@ def test_cmprsk():
 
     cov_1 = utils.as_indicators(cov, ['x1', 'x4'], bases=['d', 5])
     crr_res = cmprsk.crr(ftime, fstatus, cov_1)
+    report = crr_res.summary
     assert isinstance(crr_res, cmprsk.CrrResult)
-
-# try:
-#     cov_2 = to_categorical(cov, ['x0'])
-#     res = R_crr(ftime, fstatus, cov_2)
-#     print(res.raw)
-# except Exception as exc:
-#     print(exc)
-#
-# try:
-#     res = R_crr(ftime, fstatus, cov)
-# except InputError as exc:
-#     print("caught the right exception")
-#     print(exc)
