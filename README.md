@@ -70,10 +70,8 @@ cuminc_res.print
 # plot using matplotlib
 
 _, ax = plt.subplots()
-for group in cuminc_res.groups:
-    ax.plot(group.time, group.est, label=group.name)
-    
-    # optioanl confidence intervals. alpha is the transperancy
+for name, group in cuminc_res.groups.items():
+    ax.plot(group.time, group.est, label=name)
     ax.fill_between(group.time, group.low_ci, group.high_ci, alpha=0.4)
     
 ax.set_ylim([0, 1])
