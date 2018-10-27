@@ -103,6 +103,9 @@ def crr(failure_time, failure_status, static_covariates, cengroup=None, failcode
         subset (numpy.array or pandas Series): a logical vector specifying a subset of cases
             to include in the analysis
 
+    Note:
+        na.action is `omit`
+
     Returns:
         CrrResult: a wrapper around crr_result
     """
@@ -157,6 +160,12 @@ def cuminc(failure_time, failure_status, group=None, strata=None, rho=0, cencode
         cencode (int): value of fstatus variable which indicates the failure time is censored
         subset (numpy.array or pandas.Series): a logical vector specifying a subset of cases
             to include in the analysis
+
+    Returns:
+        CumincResult: a wrapper around the result.
+
+    Note:
+        na.action is `omit`
     """
     if isinstance(failure_time, pd.Series):
         failure_time = failure_time.values
@@ -191,13 +200,11 @@ def cuminc(failure_time, failure_status, group=None, strata=None, rho=0, cencode
 
 class CumincGroup(object):
 
-    def __init__(self, name, time, est, var):
-        self.name = name
+    def __init__(self, time, est, var):
         self.time = time
         self.est = est
         self.var =  var
-        self._N = len(self.time)
-        self.std = np.sqrt(self.var/self._N)
+        self.std = np.sqrt(self.var)
 
     @property
     def low_ci(self):
@@ -211,12 +218,22 @@ class CumincGroup(object):
 class CumincResult(object):
     """An parser for the result coming from crr.
 
-    The full result is accessible via CumincResult.raw
+    The raw result is accessible via CumincResult.raw
+
+    To get the summary use `print` property
+
+    In order to plot use the `groups` member - see Example in the README.
+
+    Note:
+        groups is a dictionary with keys that are the group name (e.g `1 2`)
+        and the values are `CumincGroup` i.e. they have members: time, est, var and
+        low_ci, high_ci properties.
     """
     def __init__(self, r_cuminc_res, stats=None):
+        print('stats: ', stats)
         self.raw = r_cuminc_res
-        self.unpack()
-        self._stats = self.parse_stats() if stats else stats
+        self._stats = self.parse_stats() if stats else None
+        self._set_groups()
 
     def parse_stats(self):
         r_stats = self.raw[-1]
@@ -226,12 +243,14 @@ class CumincResult(object):
     def stats(self):
         return self._stats
 
-    def unpack(self):
-        self.groups = []
-        for group, name in zip(self.raw[:-1], list(self.raw.names[:-1])):
-            args = (name, ) + tuple([np.array(element) for element in group])
-            self.groups.append(CumincGroup(*args))
-
+    def _set_groups(self):
+        self.groups = dict()
+        if self._stats is not None:
+            for group, name in zip(self.raw[:-1], self.raw.names[:-1]):
+                self.groups[name] = CumincGroup(*[np.array(element) for element in group])
+        else:
+            for group, name in zip(self.raw, self.raw.names):
+                self.groups[name] = CumincGroup(*[np.array(element) for element in group])
     @property
     def print(self):
         print(self.raw)
