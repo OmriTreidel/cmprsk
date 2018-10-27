@@ -24,6 +24,8 @@ TL;DR
 
 ## Quickstart
 
+### Example: crr
+
 ```python
 
 import pandas as pd
@@ -45,6 +47,41 @@ print(report)
 ```
 `ftime` and `fstatus` can be numpy array or pandas series, and `static_covariates` is a pandas DataFrame.
 The `report` is a pandas `DataFrame` as well. 
+
+### Example: cuminc
+
+```python
+import matplotlib.plt
+import numpy as np
+import pandas as pd
+
+
+from cmprsk import cmprsk
+
+data  = pd.read_csv('cmprsk/cmprsk/tests/test_set.csv')
+print(data)
+
+
+cuminc_res = cmprsk.cuminc(data.ss, data.cc, group=data.gg, strata=data.strt)
+
+# print
+cuminc_res.print
+
+# plot using matplotlib
+
+_, ax = plt.subplots()
+for group in cuminc_res.groups:
+    ax.plot(group.time, group.est, label=group.name)
+    
+    # optioanl confidence intervals. alpha is the transperancy
+    ax.fill_between(group.time, group.low_ci, group.high_ci, alpha=0.4)
+    
+ax.set_ylim([0, 1])
+ax.legend()
+ax.set_title('foo bar')
+plt.show()
+
+```
 
 
 ### How to update package:
