@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import rpy2 as R
 
-from pandas.api.types import is_numeric_dtype
-# from rpy2 import rinterface
 from rpy2 import robjects
+from pandas.api.types import is_numeric_dtype
 from rpy2.robjects import r, pandas2ri, numpy2ri
 from rpy2.robjects.packages import importr
 

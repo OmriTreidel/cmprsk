@@ -1,11 +1,15 @@
 import numpy as np
 import pandas as pd
 
+from collections import namedtuple
+from rpy2.robjects import pandas2ri, numpy2ri
 from rpy2.robjects.packages import importr as import_R
 from scipy.stats import norm as normal
 
 from . import rpy_utils
 from . import utils
+
+numpy2ri.activate()
 
 
 r_cmprsk = import_R('cmprsk')
@@ -16,7 +20,7 @@ class NonNumericCovariateError(Exception):
 
 
 class CrrResult(object):
-    """An incomplete parser for the result coming from crr.
+    """An parser for the result coming from crr.
 
     The full result is accessible via CrrResult.raw
     """
@@ -78,18 +82,30 @@ class CrrResult(object):
         out['names'] = self.names
         return out.set_index('names')
 
+
 def p_value(x, stderr):
     return 2 * (1 - normal.cdf(abs(x/stderr)))
 
 
-def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
+def crr(failure_time, failure_status, static_covariates, cengroup=None, failcode=1, cencode=0,
         subset=None, **kwargs):
     """
     Args:
-        ftime (np.array or pandas.Series): time to failure
-        fstatus (np.array or pandas.Series):
+        failure_time (np.array or pandas.Series): vector of failure/censoring times
+        failure_status (np.array or pandas.Series): vector with a unique code for each failure type and a separate
+            code for censored observations
         static_covariates (pd.DataFrame): time independent  covariates. numeric only dataframe
 
+    Keyword Args:
+        cengroup (np.array ofpandas.Series): vector with different values for
+            each group with a distinct censoring distribution
+        failcode (int): code of fstatus that denotes the failure type of interest
+        cencode (int): code of fstatus that denotes censored observations
+        subset (numpy.array or pandas Series): a logical vector specifying a subset of cases
+            to include in the analysis
+
+    Returns:
+        CrrResult: a wrapper around crr_result
     """
     non_numeric_cols = utils.non_numeric_columns(static_covariates)
     if non_numeric_cols:
@@ -99,13 +115,13 @@ def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
         Please convert text columns using `rpy_utils.to_categorical` method first""".format(non_numeric_cols)
         raise NonNumericCovariateError(msg)
 
-    if isinstance(ftime, pd.Series):
-        ftime = ftime.values
-    r_ftime = rpy_utils.r_vector(ftime)
+    if isinstance(failure_time, pd.Series):
+        failure_time = failure_time.values
+    r_ftime = rpy_utils.r_vector(failure_time)
 
-    if isinstance(fstatus, pd.Series):
-        fstatus = fstatus.values
-    r_fstatus = rpy_utils.r_vector(fstatus)
+    if isinstance(failure_status, pd.Series):
+        failure_status = failure_status.values
+    r_fstatus = rpy_utils.r_vector(failure_status)
 
     r_static_cov = rpy_utils.r_dataframe(static_covariates)
 
@@ -114,9 +130,109 @@ def crr(ftime, fstatus, static_covariates, cengroup=None, failcode=1, cencode=0,
         kwargs['cengroup'] = r_cengroup
 
     if subset is not None:
+        if isinstance(subset, pd.Series):
+            subset = subset.values
         r_subset = rpy_utils.r_vector(subset)
         kwargs['subset'] = r_subset
 
     r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_static_cov,
                                 failcode=failcode, cencode=cencode, **kwargs)
     return CrrResult(r_crr_result)
+
+
+def cuminc(failure_time, failure_status, group=None, strata=None, rho=0, cencode=0, subset=None,
+           **kwargs):
+    """
+    Args:
+        failure_time (numpy.array or pandas.Series): failure time variable
+        failure_status (numpy.array or pandas.Series): variable with distinct codes
+            for different causes of failure and also a distinct code for censored observations
+
+    Keyword Args:
+        group (numpy.array or pandas.Series): estimates will calculated within groups given by
+            distinct values of this variable. Tests will compare these groups. If missing then
+            treated as all one group (no test statistics)
+        strata (numpy.array or pandas.Series): stratification variable. Has no effect on estimates.
+            Tests will be stratified on this variable. (all data in 1 stratum, if missing)
+        rho (int): Power of the weight function used in the tests.
+        cencode (int): value of fstatus variable which indicates the failure time is censored
+        subset (numpy.array or pandas.Series): a logical vector specifying a subset of cases
+            to include in the analysis
+    """
+    if isinstance(failure_time, pd.Series):
+        failure_time = failure_time.values
+    r_ftime = rpy_utils.r_vector(failure_time)
+
+    if isinstance(failure_status, pd.Series):
+        failure_status = failure_status.values
+    r_fstatus = rpy_utils.r_vector(failure_status)
+
+    if group is not None:
+        if isinstance(group, pd.Series):
+            group = group.values
+        r_group = rpy_utils.r_vector(group)
+        kwargs['group'] = r_group
+
+    if strata is not None:
+        if isinstance(strata, pd.Series):
+            strata = strata.values
+        r_strata = rpy_utils.r_vector(strata)
+        kwargs['strata'] = r_strata
+
+    if subset is not None:
+        if isinstance(subset, pd.Series):
+            subset = subset.values
+        r_subset = rpy_utils.r_vector(subset)
+        kwargs['subset'] = r_subset
+
+    cuminc_res = r_cmprsk.cuminc(failure_time, failure_status,
+                                 rho=rho, cencode=cencode, **kwargs)
+    return CumincResult(cuminc_res, stats=(group is not None))
+
+
+class CumincGroup(object):
+
+    def __init__(self, name, time, est, var):
+        self.name = name
+        self.time = time
+        self.est = est
+        self.var =  var
+        self._N = len(self.time)
+        self.std = np.sqrt(self.var/self._N)
+
+    @property
+    def low_ci(self):
+        return self.est - 2 * self.std
+
+    @property
+    def high_ci(self):
+        return self.est + 2 * self.std
+
+
+class CumincResult(object):
+    """An parser for the result coming from crr.
+
+    The full result is accessible via CumincResult.raw
+    """
+    def __init__(self, r_cuminc_res, stats=None):
+        self.raw = r_cuminc_res
+        self.unpack()
+        self._stats = self.parse_stats() if stats else stats
+
+    def parse_stats(self):
+        r_stats = self.raw[-1]
+        return pd.DataFrame(pandas2ri.ri2py(r_stats), columns=r_stats.colnames)
+
+    @property
+    def stats(self):
+        return self._stats
+
+    def unpack(self):
+        self.groups = []
+        for group, name in zip(self.raw[:-1], list(self.raw.names[:-1])):
+            args = (name, ) + tuple([np.array(element) for element in group])
+            self.groups.append(CumincGroup(*args))
+
+    @property
+    def print(self):
+        print(self.raw)

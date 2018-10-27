@@ -23,7 +23,7 @@ def get_data():
     return ftime, fstatus, cov
 
 
-def test_cmprsk():
+def test_crr():
     ftime, fstatus, cov = get_data()
 
     with pytest.raises(cmprsk.NonNumericCovariateError):
@@ -33,3 +33,9 @@ def test_cmprsk():
     crr_res = cmprsk.crr(ftime, fstatus, cov_1)
     report = crr_res.summary
     assert isinstance(crr_res, cmprsk.CrrResult)
+
+
+def test_cuminc():
+    ftime, fstatus, _ = get_data()
+    crr_res = cmprsk.cuminc(ftime, fstatus)
+    assert isinstance(crr_res, cmprsk.CumincResult)
