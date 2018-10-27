@@ -30,8 +30,7 @@ class CrrResult(object):
         self._coefficients = self.parsed['coef']
         self._names = list(self.raw[0].names)
         self._covariance = self.parsed['var']
-        self._stderr = np.sqrt(np.diag(self._covariance))
-        self._z = self._covariance/self._stderr
+        self._std = np.sqrt(np.diag(self._covariance))
 
     def asdict(self):
         return rpy_utils.parse_r_list(self.raw)
@@ -45,8 +44,8 @@ class CrrResult(object):
         return self._coefficients
 
     @property
-    def stderr(self):
-        return self._stderr
+    def std(self):
+        return self._std
 
     @property
     def covariance(self):
@@ -55,14 +54,14 @@ class CrrResult(object):
     @property
     def p_values(self):
         _p_vals = [p_value(beta, std) for beta, std in
-                    zip(self.coefficients, self.stderr)]
+                    zip(self.coefficients, self.std)]
         return np.array(_p_vals)
 
     def hazard_ratio(self, conf_level=0.95):
         values = np.zeros(len(self.coefficients))
         confidence = np.zeros((len(self.coefficients), 2))
         edges = np.array(normal.interval(conf_level))
-        for i, (coef, std) in enumerate(zip(self.coefficients, self.stderr)):
+        for i, (coef, std) in enumerate(zip(self.coefficients, self.std)):
             values[i] = np.exp(coef)
             confidence[i, :] = [np.exp(coef + edges[0] * std),
                                 np.exp(coef + edges[1] * std)]
@@ -70,11 +69,11 @@ class CrrResult(object):
 
     @property
     def summary(self):
-        cols = ['names', 'coefficients', 'stderr', 'hazard_ratio',
+        cols = ['names', 'coefficients', 'std', 'hazard_ratio',
                 'hazard_ratio_2.5%', 'hazard_ratio_97.5%', 'p_values']
         out = pd.DataFrame(columns=cols)
         out['coefficients'] = self.coefficients
-        out['stderr'] = self.stderr
+        out['std'] = self.std
         hazard_ratio, confidence = self.hazard_ratio()
         out['hazard_ratio'] = hazard_ratio
         out[['hazard_ratio_2.5%', 'hazard_ratio_97.5%']] = confidence
@@ -83,8 +82,8 @@ class CrrResult(object):
         return out.set_index('names')
 
 
-def p_value(x, stderr):
-    return 2 * (1 - normal.cdf(abs(x/stderr)))
+def p_value(x, std):
+    return 2 * (1 - normal.cdf(abs(x/std)))
 
 
 def crr(failure_time, failure_status, static_covariates, cengroup=None, failcode=1, cencode=0,
