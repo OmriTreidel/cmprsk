@@ -18,9 +18,10 @@ of a competing risk, JASA, 94:496-509**.
 * Only python 3 is now supported. Recommended python version >= 3.8 
 
 ###
-* The original version of this package was written which `rpy2` version 2.9.4. Since `rpy2` had many breaking changes `cmprsk` version **0.X.Y** only works with `rpy2` version 2.9.X.
+* The original version of this package was written with `rpy2` version 2.9.4. Since then, `rpy2` had many breaking changes. 
+Therefore `cmprsk` version **0.X.Y** only works with `rpy2` version 2.9.X.
 * The `cmprsk` package v **1.X.Y** is now up-to-date and is using `rpy2` 3.4.5. 
-* 
+
 ### Installation steps
 
 * install `R`
@@ -42,7 +43,7 @@ TL;DR
 
 ## Quickstart
 
-For example usage consult the [tutorial notebook](cmprsk/tutorial.ipynb)
+For example usage consult the tutorial notebook in this repo: `package_usage.ipynb`
 
 ### Example: crr
 
