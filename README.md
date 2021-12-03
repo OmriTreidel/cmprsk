@@ -13,6 +13,24 @@ of a competing risk, JASA, 94:496-509**.
 [Original Package documentation](https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf)
 
 ## Requierments
+
+### python
+* Only python 3 is now supported. Recommended python version >= 3.8 
+
+###
+* The original version of this package was written which `rpy2` version 2.9.4. Since `rpy2` had many breaking changes `cmprsk` version **0.X.Y** only works with `rpy2` version 2.9.X.
+* The `cmprsk` package v **1.X.Y** is now up-to-date and is using `rpy2` 3.4.5. 
+* 
+### Installation steps
+
+* install `R`
+* install `cmprsk` R package: open R terminal and run `install.packages("cmprsk")`
+* create a virtual environment (recommended)
+* install`rpy2` - if using `conda` for creating the virtual environment on MacOS M1 (apple silicon) install `rpy2` using pip  
+* install `pandas`
+* install `scipy`
+* install pytest for running unit tests (dev) only
+
 This package is using `rpy2` in order to use import the cmprsk R packge and therefore the [requierments for rpy2](https://rpy2.readthedocs.io/en/version_2.8.x/overview.html?highlight=readline#requirements) must be met.
 
 TL;DR
@@ -24,6 +42,8 @@ TL;DR
 
 ## Quickstart
 
+For example usage consult the [tutorial notebook](cmprsk/tutorial.ipynb)
+
 ### Example: crr
 
 ```python
@@ -34,12 +54,12 @@ import cmprsk.cmprsk as cmprsk
 
 from cmprsk import utils
 
-data = pd.read_csv('my_data_fle')
+data = pd.read_csv('my_data_file.csv')
 # assuming that x1,x2,x3, x4 are covatiates. 
 # x1 are x4 are categorical with baseline 'd' for x1 and 5 for x2 
 static_covariates = utils.as_indicators(data[['x1', 'x2', 'x3', 'x4']], ['x1', 'x4'], bases=['d', 5])
 
-crr_result = cmprsk.crr(ftime, fstatus, static_covariates)
+crr_result = cmprsk.crr(data['ftime'], data['fstatus'], static_covariates)
 report = crr_result.summary
 
 print(report)
@@ -59,9 +79,6 @@ import pandas as pd
 from cmprsk import cmprsk
 
 data  = pd.read_csv('cmprsk/cmprsk/tests/test_set.csv')
-print(data)
-
-
 cuminc_res = cmprsk.cuminc(data.ss, data.cc, group=data.gg, strata=data.strt)
 
 # print
@@ -80,7 +97,29 @@ ax.set_title('foo bar')
 plt.show()
 
 ```
+## Development
+For running the unit tests run 
 
+    pytest --cov=cmprsk cmprsk/tests/
+
+from the project root. 
+
+Current coverage
+```buildoutcfg
+---------- coverage: platform darwin, python 3.9.7-final-0 -----------
+Name                             Stmts   Miss  Cover
+----------------------------------------------------
+cmprsk/__init__.py                   0      0   100%
+cmprsk/cmprsk.py                   128     22    83%
+cmprsk/rpy_utils.py                 44     10    77%
+cmprsk/tests/__init__.py             0      0   100%
+cmprsk/tests/test_cmprsk.py         30      0   100%
+cmprsk/tests/test_rpy_utils.py      27      1    96%
+cmprsk/tests/test_utils.py          37      0   100%
+cmprsk/utils.py                     23      1    96%
+----------------------------------------------------
+TOTAL                              289     34    88%
+```
 
 ### How to update package:
 0. update version in setup.py
