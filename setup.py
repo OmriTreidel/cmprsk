@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="cmprsk",
-    version="0.1.0",
+    version="1.0.0",
     author="Omri Treidel",
     author_email="treidel2@gmail.com",
     description="A python wrapper around cmprsk R package",
