@@ -29,7 +29,6 @@ def _to_dummies(df, column_name, base=None):
     _dummies = pd.get_dummies(df[column_name], prefix=column_name).astype('int64')
     if base is not None:
         _dummies = _dummies.drop('%s_%s' % (column_name, base), axis=1)
-
     _df = _df.drop(column_name, axis=1)
     return pd.concat([_df, _dummies], axis=1)
 
@@ -37,9 +36,7 @@ def _to_dummies(df, column_name, base=None):
 def as_indicators(df, column_names, bases=None):
     if bases is None:
         bases = [None] * len(column_names)
-
     _df = df.copy()
     for col, base in zip(column_names, bases):
         _df = _to_dummies(_df, col, base=base)
-
     return _df

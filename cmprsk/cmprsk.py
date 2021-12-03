@@ -9,9 +9,6 @@ from scipy.stats import norm as normal
 from . import rpy_utils
 from . import utils
 
-numpy2ri.activate()
-
-
 r_cmprsk = import_R('cmprsk')
 
 
@@ -86,14 +83,14 @@ def p_value(x, std):
     return 2 * (1 - normal.cdf(abs(x/std)))
 
 
-def crr(failure_time, failure_status, static_covariates, cengroup=None, failcode=1, cencode=0,
+def crr(failure_time, failure_status, static_covariates: pd.DataFrame, cengroup=None, failcode=1, cencode=0,
         subset=None, **kwargs):
     """
     Args:
         failure_time (np.array or pandas.Series): vector of failure/censoring times
         failure_status (np.array or pandas.Series): vector with a unique code for each failure type and a separate
             code for censored observations
-        static_covariates (pd.DataFrame): time independent  covariates. numeric only dataframe
+        static_covariates (pd.DataFrame): time independent covariates. numeric only dataframe
 
     Keyword Args:
         cengroup (np.array ofpandas.Series): vector with different values for
@@ -137,8 +134,7 @@ def crr(failure_time, failure_status, static_covariates, cengroup=None, failcode
         r_subset = rpy_utils.r_vector(subset)
         kwargs['subset'] = r_subset
 
-    r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_static_cov,
-                                failcode=failcode, cencode=cencode, **kwargs)
+    r_crr_result = r_cmprsk.crr(r_ftime, r_fstatus, r_static_cov, failcode=failcode, cencode=cencode, **kwargs)
     return CrrResult(r_crr_result)
 
 
@@ -167,34 +163,22 @@ def cuminc(failure_time, failure_status, group=None, strata=None, rho=0, cencode
     Note:
         na.action is `omit`
     """
-    if isinstance(failure_time, pd.Series):
-        failure_time = failure_time.values
     r_ftime = rpy_utils.r_vector(failure_time)
-
-    if isinstance(failure_status, pd.Series):
-        failure_status = failure_status.values
     r_fstatus = rpy_utils.r_vector(failure_status)
 
     if group is not None:
-        if isinstance(group, pd.Series):
-            group = group.values
         r_group = rpy_utils.r_vector(group)
         kwargs['group'] = r_group
 
     if strata is not None:
-        if isinstance(strata, pd.Series):
-            strata = strata.values
         r_strata = rpy_utils.r_vector(strata)
         kwargs['strata'] = r_strata
 
     if subset is not None:
-        if isinstance(subset, pd.Series):
-            subset = subset.values
         r_subset = rpy_utils.r_vector(subset)
         kwargs['subset'] = r_subset
 
-    cuminc_res = r_cmprsk.cuminc(failure_time, failure_status,
-                                 rho=rho, cencode=cencode, **kwargs)
+    cuminc_res = r_cmprsk.cuminc(r_ftime, r_fstatus, rho=rho, cencode=cencode, **kwargs)
     return CumincResult(cuminc_res, stats=(group is not None))
 
 
@@ -230,14 +214,13 @@ class CumincResult(object):
         low_ci, high_ci properties.
     """
     def __init__(self, r_cuminc_res, stats=None):
-        print('stats: ', stats)
         self.raw = r_cuminc_res
-        self._stats = self.parse_stats() if stats else None
+        self._stats = self._parse_stats() if stats else None
         self._set_groups()
 
-    def parse_stats(self):
+    def _parse_stats(self):
         r_stats = self.raw[-1]
-        return pd.DataFrame(pandas2ri.ri2py(r_stats), columns=r_stats.colnames)
+        return pd.DataFrame(data=rpy_utils.pandas_dataframe(r_stats), columns=r_stats.colnames)
 
     @property
     def stats(self):
