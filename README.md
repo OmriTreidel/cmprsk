@@ -32,7 +32,7 @@ Therefore `cmprsk` version **0.X.Y** only works with `rpy2` version 2.9.X.
 * install `scipy` (tested on version 1.10.1)
 * install `pytest` and `pytest-cov` for running unit tests (dev) only
 
-This package is using `rpy2` in order to use import the cmprsk R packge and therefore the [requierments for rpy2](https://rpy2.readthedocs.io/en/version_2.8.x/overview.html?highlight=readline#requirements) must be met.
+This package is using `rpy2` in order to use import the cmprsk R packge and therefore the [requirements for rpy2](https://rpy2.readthedocs.io/en/version_2.8.x/overview.html?highlight=readline#requirements) must be met.
 
 TL;DR
 * Unix like OS: Linux, MacOS, BSD. (May work on Windows, look at [rpy2 binaries])(https://rpy2.readthedocs.io/en/version_2.8.x/overview.html#microsoft-s-windows-precompiled-binaries). 
