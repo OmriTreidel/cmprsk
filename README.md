@@ -12,7 +12,7 @@ of a competing risk, JASA, 94:496-509**.
 
 [Original Package documentation](https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf)
 
-## Requierments
+## Requirements
 
 ### python
 * Only python 3 is now supported. Recommended python version >= 3.8 
