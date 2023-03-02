@@ -45,9 +45,9 @@ def r_vector(np_vector):
         return rinterface.IntSexpVector(np_vector)
     elif np.issubdtype(d_type, np.floating):
         return rinterface.FloatSexpVector(np_vector)
-    elif np.issubdtype(d_type, np.bool):
+    elif np.issubdtype(d_type, bool):
         return rinterface.BoolSexpVector(np_vector)
-    elif np.issubdtype(d_type, np.str):
+    elif np.issubdtype(d_type, str):
         return rinterface.StrSexpVector(np_vector)
     elif all_strings(np_vector):
         # this is an expensive check. However unless dtype is explicitly set to str numpy array of strings have dtype 'O'
@@ -68,4 +68,4 @@ def pandas_dataframe(r_dataframe):
 
 
 def parse_r_list(r_list):
-    return dict(zip(r_list.names, map(np.array, r_list)))
+    return dict(zip(r_list.names, np.array(r_list, dtype=object)))

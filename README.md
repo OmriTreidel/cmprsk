@@ -27,10 +27,10 @@ Therefore `cmprsk` version **0.X.Y** only works with `rpy2` version 2.9.X.
 * install `R`
 * install `cmprsk` R package: open R terminal and run `install.packages("cmprsk")`
 * create a virtual environment (recommended)
-* install`rpy2` - if using `conda` for creating the virtual environment on MacOS M1 (apple silicon) install `rpy2` using pip  
-* install `pandas`
-* install `scipy`
-* install pytest for running unit tests (dev) only
+* install`rpy2` - if using `conda` for creating the virtual environment on MacOS M1 (apple silicon) install `rpy2` using pip (tested on version 3.5.9) 
+* install `pandas` (tested on version 1.5.3)
+* install `scipy` (tested on version 1.10.1)
+* install `pytest` and `pytest-cov` for running unit tests (dev) only
 
 This package is using `rpy2` in order to use import the cmprsk R packge and therefore the [requierments for rpy2](https://rpy2.readthedocs.io/en/version_2.8.x/overview.html?highlight=readline#requirements) must be met.
 
@@ -79,7 +79,7 @@ import pandas as pd
 
 from cmprsk import cmprsk
 
-data  = pd.read_csv('cmprsk/cmprsk/tests/test_set.csv')
+data  = pd.read_csv('cmprsk/cmprsk/tests/example_dataset.csv')
 cuminc_res = cmprsk.cuminc(data.ss, data.cc, group=data.gg, strata=data.strt)
 
 # print
@@ -103,7 +103,7 @@ For running the unit tests run
 
     pytest --cov=cmprsk cmprsk/tests/
 
-from the project root. 
+from the project root. Note: you'll need to install [pytest-cov](https://pypi.org/project/pytest-cov/).
 
 Current coverage
 ```buildoutcfg
