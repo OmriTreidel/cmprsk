@@ -68,4 +68,6 @@ def pandas_dataframe(r_dataframe):
 
 
 def parse_r_list(r_list):
-    return dict(zip(r_list.names, map(np.array, r_list)))
+    r_list_array = np.array(r_list, dtype=object)
+    return dict(zip(r_list.names, r_list_array))
+
