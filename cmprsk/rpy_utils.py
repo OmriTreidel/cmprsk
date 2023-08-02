@@ -19,8 +19,9 @@ class NotImplementedError(Exception):
 class InputError(Exception):
     pass
 
+
 def all_strings(np_arr) -> bool:
-    for x in arr:
+    for x in np_arr:
         if not isinstance(x, str):
             return False
     return True
